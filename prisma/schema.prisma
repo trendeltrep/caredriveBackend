@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Driver {
+  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driverName              String   @map("driver_name")
+  driverSurname           String   @map("driver_surname")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  city                    String
+  phone                   String
+  email                   String
+  password                String
+  averageMonthlyHeartbeat Int      @default(0) @map("average_monthly_heartbeat")
+
+  watcherId String?  @map("watcher_id") @db.Uuid
+  watcher   Watcher? @relation(fields: [watcherId], references: [id], onDelete: SetNull)
+
+  cars Car[]
+  heartbeats Heartbeat[]
+  alerts Alert[]
+
+  @@map("drivers")
+}
+
+model Alert {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  reason    String
+
+  accidentId String?   @map("accident_id") @db.Uuid
+  accident   Accident? @relation(fields: [accidentId], references: [id], onDelete: SetNull)
+
+  driverId String? @map("driver_id") @db.Uuid
+  driver   Driver? @relation(fields: [driverId], references: [id])
+
+  @@map("alerts")
+}
+
+model Watcher {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone          String
+  watcherName    String @map("watcher_name")
+  watcherSurname String @map("watcher_surname")
+  isTaken        WatcherIsTaken @default(FREE)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  email    String
+  role     WatcherRole @default(WATCHER)
+  password String
+
+  drivers Driver[]
+
+  @@map("watchers")
+}
+
+model Heartbeat {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  count       Int
+  description String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  driverId String? @map("driver_id") @db.Uuid
+  driver   Driver? @relation(fields: [driverId], references: [id])
+
+  @@map("heartbeats")
+}
+
+model Accident {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reason      String
+  place       String
+  description String
+
+  alerts Alert[]
+
+  @@map("accidents")
+}
+
+model Car {
+  id               String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  model            String
+  year             Int
+  registrationCity String @map("registration_city")
+
+  driverId String? @map("driver_id") @db.Uuid
+  driver   Driver? @relation(fields: [driverId], references: [id])
+
+
+
+  @@map("cars")
+}
+
+enum WatcherRole {
+  ADMIN
+  WATCHER
+}
+
+
+enum WatcherIsTaken {
+  TAKEN
+  FREE
+}
